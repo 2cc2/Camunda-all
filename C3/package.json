@@ -1,0 +1,19 @@
+{
+  "name": "camunda-shipping-demo",
+  "version": "1.0.0",
+  "description": "Camunda 8 collaboration demo - shipping process with FF and Transport",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "workers": "ts-node index.ts",
+    "send:ff": "ts-node sendFFMsg.ts",
+    "send:transport": "ts-node sendMsg.ts"
+  },
+  "dependencies": {
+    "@camunda8/sdk": "^8.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}
