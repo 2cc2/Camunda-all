@@ -1,0 +1,8 @@
+<root>
+ <spec>test_spec.mcrl2</spec>
+ <properties>
+  <property>deadlock</property>
+ </properties>
+ <jittyc>false</jittyc>
+ <linearisation_method>regular</linearisation_method>
+</root>

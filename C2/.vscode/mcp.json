@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "camunda-message-demo": {
+      "type": "stdio",
+      "command": "npm",
+      "cwd": "${workspaceFolder}/code-camunda8/message-demo/nodejs",
+      "args": ["run", "mcp"]
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": ["dependencies"],
+  "assignees": ["@me"],
+  "packageRules": [
+    {
+      "matchManagers": ["maven"],
+      "matchPackagePatterns": ["*"],
+      "groupName": "Java dependencies",
+      "schedule": ["before 4am on monday"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackagePatterns": ["*"],
+      "groupName": "Node.js dependencies",
+      "schedule": ["before 4am on monday"]
+    },
+    {
+      "matchManagers": ["maven"],
+      "matchPackagePatterns": ["io.camunda.*"],
+      "groupName": "Camunda dependencies",
+      "schedule": ["before 4am on monday"]
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "customType": "regex",
+      "matchManagers": ["regex"],
+      "fileMatch": ["^nodejs/camunda-test-config\\.json$"],
+      "matchStrings": [
+        "\"camundaDockerImageVersion\":\\s*\"(?<currentValue>.*?)\""
+      ],
+      "datasourceTemplate": "docker",
+      "registryUrlTemplate": "https://index.docker.io",
+      "depNameTemplate": "camunda/camunda",
+      "versioningTemplate": "semver",
+      "groupName": "Camunda Docker dependencies",
+      "schedule": ["before 4am on monday"]
+    }
+  ],
+  "maven": {
+    "enabled": true
+  },
+  "npm": {
+    "enabled": true
+  }
+}

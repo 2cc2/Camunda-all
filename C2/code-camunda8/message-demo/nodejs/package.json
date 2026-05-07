@@ -1,0 +1,34 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ts-node ./source/index.ts",
+    "demo:message-pair": "npx ts-node ./source/demo-message-pair.ts",
+    "start:owner-contract": "npx ts-node ./source/owner-contract/index.ts",
+    "demo:owner-contract": "npx ts-node ./source/owner-contract/demo.ts",
+    "start:depot-contract": "npx ts-node ./source/depot-contract/index.ts",
+    "demo:depot-contract": "npx ts-node ./source/depot-contract/demo.ts",
+    "start:logistics": "npx ts-node ./source/logistics/index.ts",
+    "demo:logistics": "npx ts-node ./source/logistics/demo.ts",
+    "test": "npx jest",
+    "build": "npx tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "description": "",
+  "dependencies": {
+    "@camunda8/sdk": "^8.7.30"
+  },
+  "devDependencies": {
+    "@camunda8/process-test": "^1.2.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.12.2",
+    "jest": "^30.0.4",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

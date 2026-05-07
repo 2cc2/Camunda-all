@@ -1,0 +1,16 @@
+act
+    send_request,recv_request,send_response,recv_response,request,response;
+
+proc
+    Requester = send_request . recv_response . Requester;
+    Responder = recv_request . send_response . Responder;
+
+init
+    allow({request, response},
+        comm({
+            send_request | recv_request -> request,
+            send_response | recv_response -> response
+            },
+            Requester || Responder
+        )
+    );

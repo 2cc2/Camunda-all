@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_owner_export_contract" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.45.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.5.0">
+  <bpmn:process id="owner-export-contract" name="Owner Export Contract" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_owner">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:serviceTask id="Task_fill" name="fill out certificate of entrustment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="fill-out-certificate-of-entrustment" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_handle" name="handle order">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="handle-order" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_send_order" name="send order to ffw">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-order-to-ffw" retries="1" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:intermediateCatchEvent id="Event_ctn" name="ctn received">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ctn" messageRef="Message_ctn_to_owner" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:serviceTask id="Task_send_outbound" name="send outbound ctn to transport">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-outbound-ctn-to-transport" retries="1" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:intermediateCatchEvent id="Event_expense" name="expense note received">
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_expense" messageRef="Message_expense_note_to_owner" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:serviceTask id="Task_payment" name="payment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="payment" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_owner">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_owner" targetRef="Task_fill" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_fill" targetRef="Task_handle" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_handle" targetRef="Task_send_order" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_send_order" targetRef="Event_ctn" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Event_ctn" targetRef="Task_send_outbound" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_send_outbound" targetRef="Event_expense" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Event_expense" targetRef="Task_payment" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_payment" targetRef="EndEvent_owner" />
+  </bpmn:process>
+
+  <bpmn:message id="Message_ctn_to_owner" name="ctn-to-owner">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+
+  <bpmn:message id="Message_expense_note_to_owner" name="expense-note-to-owner">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+
+  <bpmndi:BPMNDiagram id="Diagram_owner_export_contract">
+    <bpmndi:BPMNPlane id="Plane_owner_export_contract" bpmnElement="owner-export-contract">
+      <bpmndi:BPMNShape id="Shape_start" bpmnElement="StartEvent_owner">
+        <dc:Bounds x="162" y="102" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_fill" bpmnElement="Task_fill">
+        <dc:Bounds x="240" y="80" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_handle" bpmnElement="Task_handle">
+        <dc:Bounds x="420" y="80" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_send_order" bpmnElement="Task_send_order">
+        <dc:Bounds x="580" y="80" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ctn" bpmnElement="Event_ctn">
+        <dc:Bounds x="750" y="102" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_send_outbound" bpmnElement="Task_send_outbound">
+        <dc:Bounds x="820" y="80" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_expense" bpmnElement="Event_expense">
+        <dc:Bounds x="1030" y="102" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_payment" bpmnElement="Task_payment">
+        <dc:Bounds x="1100" y="80" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_end" bpmnElement="EndEvent_owner">
+        <dc:Bounds x="1260" y="102" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Edge_1" bpmnElement="Flow_1">
+        <di:waypoint x="198" y="120" />
+        <di:waypoint x="240" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_2" bpmnElement="Flow_2">
+        <di:waypoint x="380" y="120" />
+        <di:waypoint x="420" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_3" bpmnElement="Flow_3">
+        <di:waypoint x="540" y="120" />
+        <di:waypoint x="580" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_4" bpmnElement="Flow_4">
+        <di:waypoint x="710" y="120" />
+        <di:waypoint x="750" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_5" bpmnElement="Flow_5">
+        <di:waypoint x="786" y="120" />
+        <di:waypoint x="820" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_6" bpmnElement="Flow_6">
+        <di:waypoint x="990" y="120" />
+        <di:waypoint x="1030" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_7" bpmnElement="Flow_7">
+        <di:waypoint x="1066" y="120" />
+        <di:waypoint x="1100" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_8" bpmnElement="Flow_8">
+        <di:waypoint x="1220" y="120" />
+        <di:waypoint x="1260" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
