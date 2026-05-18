@@ -1,0 +1,30 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Java / Maven
+java/target/
+*.class
+
+# Build output
+nodejs/distribution/
+dist/
+build/
+
+# Runtime logs
+camunda-test-logs/
+*.log
+
+# Environment and secrets
+.env
+.env.*
+!.env.example

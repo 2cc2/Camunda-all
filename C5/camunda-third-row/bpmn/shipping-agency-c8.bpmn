@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+  xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+  id="Definitions_ShippingAgency"
+  targetNamespace="http://bpmn.io/schema/bpmn"
+  exporter="Camunda Modeler"
+  exporterVersion="5.46.1"
+  modeler:executionPlatform="Camunda Cloud"
+  modeler:executionPlatformVersion="8.8.0">
+  <bpmn:collaboration id="Collaboration_ShippingAgency">
+    <bpmn:participant id="Participant_ShippingAgency" name="Shipping Agency" processRef="Process_ShippingAgency" />
+    <bpmn:participant id="Participant_Environment" name="Environment" processRef="Process_Environment" />
+    <bpmn:messageFlow id="MessageFlow_SO" name="so-received" sourceRef="Participant_Environment" targetRef="StartEvent_SOReceived" />
+    <bpmn:messageFlow id="MessageFlow_CtnArrival" name="ctn-arrival-info" sourceRef="Participant_Environment" targetRef="CatchEvent_CtnArrivalInfo" />
+    <bpmn:messageFlow id="MessageFlow_ShipDeparture" name="ship-departure-notification" sourceRef="Participant_Environment" targetRef="CatchEvent_ShipDeparture" />
+    <bpmn:messageFlow id="MessageFlow_ManifestToFF" name="manifest-file-to-ff" sourceRef="Task_HandleManifest" targetRef="Participant_Environment" />
+    <bpmn:messageFlow id="MessageFlow_EirToFF" name="equipment-receipt-to-ff" sourceRef="Task_MakeEquipmentReceipt" targetRef="Participant_Environment" />
+    <bpmn:messageFlow id="MessageFlow_AskDepot" name="ask-depot-for-ctn" sourceRef="Task_AskDepotForCTN" targetRef="Participant_Environment" />
+    <bpmn:messageFlow id="MessageFlow_ShipArrivalToCT" name="ship-arrival-message" sourceRef="Task_ShipArriveAtCT" targetRef="Participant_Environment" />
+    <bpmn:messageFlow id="MessageFlow_CrewList" name="crew-list-to-sbgs" sourceRef="Task_MakeCrewListToSBGS" targetRef="Participant_Environment" />
+    <bpmn:messageFlow id="MessageFlow_ExpenseToOwner" name="expense-note-to-owner" sourceRef="Task_IssueExpenseNote" targetRef="Participant_Environment" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_ShippingAgency" name="shipping-agency-process" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_SOReceived" name="S/O received">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_SOReceived" messageRef="Message_SOReceived" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_HandleManifest" name="handle Manifest">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="handle-manifest" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_MakeEquipmentReceipt" name="Make Equipment Receipt">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="make-equipment-receipt" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_AskDepotForCTN" name="ask Depot for CTN">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="ask-depot-for-ctn" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:intermediateCatchEvent id="CatchEvent_CtnArrivalInfo" name="CTN arrival info received">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_CtnArrivalInfo" messageRef="Message_CtnArrivalInfo" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="Task_ShipArriveAtCT" name="ship arrive at CT">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="ship-arrive-at-ct" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_MakeCrewListToSBGS" name="make Crew List to SBGS">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="make-crew-list-to-sbgs" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:intermediateCatchEvent id="CatchEvent_ShipDeparture" name="Ship departure">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_ShipDeparture" messageRef="Message_ShipDeparture" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="Task_IssueExpenseNote" name="Issue an expense note to the Owner">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="issue-expense-note-to-owner" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+      <bpmn:outgoing>Flow_9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_ShippingAgencyDone">
+      <bpmn:incoming>Flow_9</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_SOReceived" targetRef="Task_HandleManifest" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_HandleManifest" targetRef="Task_MakeEquipmentReceipt" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_MakeEquipmentReceipt" targetRef="Task_AskDepotForCTN" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_AskDepotForCTN" targetRef="CatchEvent_CtnArrivalInfo" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="CatchEvent_CtnArrivalInfo" targetRef="Task_ShipArriveAtCT" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_ShipArriveAtCT" targetRef="Task_MakeCrewListToSBGS" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Task_MakeCrewListToSBGS" targetRef="CatchEvent_ShipDeparture" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="CatchEvent_ShipDeparture" targetRef="Task_IssueExpenseNote" />
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="Task_IssueExpenseNote" targetRef="EndEvent_ShippingAgencyDone" />
+  </bpmn:process>
+  <bpmn:message id="Message_SOReceived" name="so-received" />
+  <bpmn:message id="Message_CtnArrivalInfo" name="ctn-arrival-info">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmn:message id="Message_ShipDeparture" name="ship-departure-notification">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmn:process id="Process_Environment" isExecutable="false" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ShippingAgency">
+    <bpmndi:BPMNPlane id="BPMNPlane_ShippingAgency" bpmnElement="Collaboration_ShippingAgency">
+      <bpmndi:BPMNShape id="Participant_ShippingAgency_di" bpmnElement="Participant_ShippingAgency" isHorizontal="true">
+        <dc:Bounds x="200" y="400" width="1140" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_SOReceived_di" bpmnElement="StartEvent_SOReceived">
+        <dc:Bounds x="242" y="433" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HandleManifest_di" bpmnElement="Task_HandleManifest">
+        <dc:Bounds x="330" y="418" width="100" height="73" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_MakeEquipmentReceipt_di" bpmnElement="Task_MakeEquipmentReceipt">
+        <dc:Bounds x="467" y="418" width="85" height="73" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AskDepotForCTN_di" bpmnElement="Task_AskDepotForCTN">
+        <dc:Bounds x="590" y="418" width="100" height="73" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CatchEvent_CtnArrivalInfo_di" bpmnElement="CatchEvent_CtnArrivalInfo">
+        <dc:Bounds x="732" y="433" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ShipArriveAtCT_di" bpmnElement="Task_ShipArriveAtCT">
+        <dc:Bounds x="800" y="421" width="100" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_MakeCrewListToSBGS_di" bpmnElement="Task_MakeCrewListToSBGS">
+        <dc:Bounds x="925" y="421" width="90" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CatchEvent_ShipDeparture_di" bpmnElement="CatchEvent_ShipDeparture">
+        <dc:Bounds x="1062" y="433" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_IssueExpenseNote_di" bpmnElement="Task_IssueExpenseNote">
+        <dc:Bounds x="1140" y="411" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ShippingAgencyDone_di" bpmnElement="EndEvent_ShippingAgencyDone">
+        <dc:Bounds x="1272" y="433" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="278" y="451" />
+        <di:waypoint x="330" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="430" y="451" />
+        <di:waypoint x="467" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="552" y="451" />
+        <di:waypoint x="590" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="690" y="451" />
+        <di:waypoint x="732" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="768" y="451" />
+        <di:waypoint x="800" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="900" y="451" />
+        <di:waypoint x="925" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="1015" y="451" />
+        <di:waypoint x="1062" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="1098" y="451" />
+        <di:waypoint x="1140" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9">
+        <di:waypoint x="1240" y="451" />
+        <di:waypoint x="1272" y="451" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_Environment_di" bpmnElement="Participant_Environment" isHorizontal="true">
+        <dc:Bounds x="200" y="80" width="1140" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="MessageFlow_SO_di" bpmnElement="MessageFlow_SO">
+        <di:waypoint x="260" y="280" />
+        <di:waypoint x="260" y="433" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_CtnArrival_di" bpmnElement="MessageFlow_CtnArrival">
+        <di:waypoint x="750" y="280" />
+        <di:waypoint x="750" y="433" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_ShipDeparture_di" bpmnElement="MessageFlow_ShipDeparture">
+        <di:waypoint x="1080" y="280" />
+        <di:waypoint x="1080" y="433" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_ManifestToFF_di" bpmnElement="MessageFlow_ManifestToFF">
+        <di:waypoint x="380" y="418" />
+        <di:waypoint x="380" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_EirToFF_di" bpmnElement="MessageFlow_EirToFF">
+        <di:waypoint x="510" y="418" />
+        <di:waypoint x="510" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_AskDepot_di" bpmnElement="MessageFlow_AskDepot">
+        <di:waypoint x="640" y="418" />
+        <di:waypoint x="640" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_ShipArrivalToCT_di" bpmnElement="MessageFlow_ShipArrivalToCT">
+        <di:waypoint x="850" y="421" />
+        <di:waypoint x="850" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_CrewList_di" bpmnElement="MessageFlow_CrewList">
+        <di:waypoint x="970" y="421" />
+        <di:waypoint x="970" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_ExpenseToOwner_di" bpmnElement="MessageFlow_ExpenseToOwner">
+        <di:waypoint x="1190" y="411" />
+        <di:waypoint x="1190" y="280" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
