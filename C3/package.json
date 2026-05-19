@@ -1,19 +1,27 @@
 {
-  "name": "camunda-shipping-demo",
+  "name": "nodejs",
   "version": "1.0.0",
-  "description": "Camunda 8 collaboration demo - shipping process with FF and Transport",
+  "main": "index.js",
   "scripts": {
-    "start": "ts-node index.ts",
-    "workers": "ts-node index.ts",
-    "send:ff": "ts-node sendFFMsg.ts",
-    "send:transport": "ts-node sendMsg.ts"
+    "start": "npx ts-node ./source/index.ts",
+    "test": "npx jest",
+    "build": "npx tsc"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "description": "",
   "dependencies": {
-    "@camunda8/sdk": "^8.7.0"
+    "@camunda8/sdk": "^8.7.30",
+    "amqplib": "^0.10.3"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.0"
+    "@camunda8/process-test": "^1.2.1",
+    "@types/amqplib": "^0.10.8",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.4",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.8.3"
   }
 }

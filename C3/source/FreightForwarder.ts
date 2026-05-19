@@ -1,9 +1,6 @@
 /**
  * Freight Forwarder (货代) 流程的 Job Workers (Camunda 8)
  * 负责与船代、报关行、车队等多方系统进行数据交互
- *
- * ⚠️ 注意:此文件相对老师原版,改了 3 处 worker 的 type 字段
- * (去掉了 send- 前缀,以匹配 BPMN 中 ServiceTask 的 zeebe:taskDefinition type)
  */
 import { CamundaRestClient, Dto } from '@camunda8/sdk'
 
@@ -22,7 +19,7 @@ export function startFreightForwarderWorkers(client: CamundaRestClient) {
     
     // Worker 1: 向船代 (SA) 发送订舱单 S/O (对应 Activity_1akkp2w)
     const sendSoToSaWorker = client.createJobWorker<FreightForwarderVariables, FreightForwarderVariables>({
-        type: 'so-to-sa',  // ⚠️ 改了:原 'send-so-to-sa'
+        type: 'send-so-to-sa', 
         timeout: 10000,
         maxJobsToActivate: 5,
         worker: 'ff-send-so-worker',
@@ -41,9 +38,9 @@ export function startFreightForwarderWorkers(client: CamundaRestClient) {
     })
 
     // Worker 2: 向报关行 (CB) 发送订单/报关信息 (对应 Activity_1h58qy9)
-    // 注意:在流程图中,这个 Worker 和 Worker 1 是并行执行的 (Parallel Gateway)
+    // 注意：在流程图中，这个 Worker 和 Worker 1 是并行执行的 (Parallel Gateway)
     const sendOrderInfoToCbWorker = client.createJobWorker<FreightForwarderVariables, FreightForwarderVariables>({
-        type: 'order-info-to-cb',  // ⚠️ 改了:原 'send-order-info-to-cb'
+        type: 'send-order-info-to-cb', 
         timeout: 10000,
         maxJobsToActivate: 5,
         worker: 'ff-send-cb-info-worker',
@@ -63,13 +60,13 @@ export function startFreightForwarderWorkers(client: CamundaRestClient) {
 
     // Worker 3: 将设备交接单 (Equipment Receipt) 下发给车队 (对应 Activity_015cl78)
     const sendReceiptToTransportWorker = client.createJobWorker<FreightForwarderVariables, FreightForwarderVariables>({
-        type: 'equipment-receipt-to-transport',  // ⚠️ 改了:原 'send-equipment-receipt-to-transport'
+        type: 'send-equipment-receipt-to-transport', 
         timeout: 10000,
         maxJobsToActivate: 5,
         worker: 'ff-send-receipt-worker',
         jobHandler: async (job, log) => {
             const orderId = job.variables.orderId ?? 'UNKNOWN_ORDER';
-            // 这里的 receiptId 是在前面的消息捕获节点中,由外部系统传入并保存到流程变量中的
+            // 这里的 receiptId 是在前面的消息捕获节点中，由外部系统传入并保存到流程变量中的
             const receiptId = job.variables.receiptId ?? 'MISSING_RECEIPT';
             
             log.info(`[派车节点] 准备向车队下发提箱指令。订单: [${orderId}], 交接单号: [${receiptId}]`, job.jobKey)
