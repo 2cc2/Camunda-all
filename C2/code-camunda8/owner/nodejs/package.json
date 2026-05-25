@@ -8,13 +8,19 @@
     "start": "ts-node source/index.ts",
     "demo": "ts-node source/demo.ts",
     "mock:inbound": "ts-node source/mock-inbound.ts",
+    "e2e": "ts-node source/e2e-test.ts",
+    "e2e:rabbitmq": "ts-node source/e2e-test.ts --useRabbitmq=true",
+    "e2e:cross-group": "ts-node source/e2e-cross-group.ts",
+    "e2e:strict": "ts-node source/e2e-strict.ts",
     "test": "jest",
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@camunda8/sdk": "^8.7.30"
+    "@camunda8/sdk": "^8.7.30",
+    "amqplib": "^0.10.5"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.7",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.15.3",
     "jest": "^29.7.0",

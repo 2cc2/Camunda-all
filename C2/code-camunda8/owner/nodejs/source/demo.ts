@@ -2,13 +2,14 @@
  * Owner contract demo / mock test runner.
  *
  * Usage:
- *   CAMUNDA_REST_ADDRESS=http://localhost:8080 npx ts-node source/demo.ts --orderId=ORDER-20260427-001 --mockInbound=true
+ *   CAMUNDA_REST_ADDRESS=http://localhost:8080 npx ts-node source/demo.ts --orderId=ORDER-20260427-001 --mockInbound=true --useRabbitmq=true
  *
  * What it does:
  * 1. Deploys owner.bpmn to Camunda 8
  * 2. Starts a process instance with the given orderId
  * 3. Optionally mocks inbound messages (ctn-to-owner, expense-note-to-owner)
  * 4. Workers drive the process to completion
+ * 5. If --useRabbitmq=true, sends outbound messages via RabbitMQ to C3
  */
 
 import { Camunda8 } from '@camunda8/sdk'
@@ -20,12 +21,15 @@ import {
   PROCESS_IDS
 } from './config'
 import { startOwnerContractWorkers } from './workers'
+import { RabbitMQPublisher } from './rabbitmq/publisher'
+import { RabbitMQConsumer } from './rabbitmq/consumer'
 
 declare const require: any
 
 type Args = {
   orderId: string
   mockInbound: boolean
+  useRabbitmq: boolean
 }
 
 function nowIso(): string {
@@ -65,11 +69,13 @@ function parseArgs(): Args {
   const argv: string[] = (globalThis as any).process?.argv ?? []
   const orderIdArg = argv.find((a: string) => a.startsWith('--orderId='))
   const mockInboundArg = argv.find((a: string) => a.startsWith('--mockInbound='))
+  const useRabbitmqArg = argv.find((a: string) => a.startsWith('--useRabbitmq='))
 
   const orderId = orderIdArg?.split('=')[1] ?? generateOrderId()
   const mockInbound = (mockInboundArg?.split('=')[1] ?? 'true').toLowerCase() === 'true'
+  const useRabbitmq = (useRabbitmqArg?.split('=')[1] ?? 'false').toLowerCase() === 'true'
 
-  return { orderId, mockInbound }
+  return { orderId, mockInbound, useRabbitmq }
 }
 
 async function deployOwnerModel(client: any): Promise<void> {
@@ -140,7 +146,7 @@ async function mockInboundMessages(client: any, orderId: string): Promise<void> 
 }
 
 async function main(): Promise<void> {
-  const { orderId, mockInbound } = parseArgs()
+  const { orderId, mockInbound, useRabbitmq } = parseArgs()
 
   await assertReachable(CAMUNDA_REST_ADDRESS)
 
@@ -149,10 +155,26 @@ async function main(): Promise<void> {
     ZEEBE_REST_ADDRESS: CAMUNDA_REST_ADDRESS
   }).getCamundaRestClient()
 
-  const workers = startOwnerContractWorkers(client)
+  // Initialize RabbitMQ if enabled
+  let rabbitPublisher: RabbitMQPublisher | undefined
+  let rabbitConsumer: RabbitMQConsumer | undefined
+
+  if (useRabbitmq) {
+    rabbitPublisher = new RabbitMQPublisher()
+    await rabbitPublisher.connect()
+    console.log('[demo] RabbitMQ publisher connected')
+
+    rabbitConsumer = new RabbitMQConsumer(client)
+    await rabbitConsumer.connect()
+    await rabbitConsumer.startConsuming()
+    console.log('[demo] RabbitMQ consumer started')
+  }
+
+  const workers = startOwnerContractWorkers(client, rabbitPublisher)
 
   console.log(`Starting Owner contract demo with orderId=${orderId}`)
   console.log(`REST endpoint: ${CAMUNDA_REST_ADDRESS}`)
+  console.log(`RabbitMQ: ${useRabbitmq ? 'enabled' : 'disabled'}`)
 
   await deployOwnerModel(client)
 
@@ -176,6 +198,10 @@ async function main(): Promise<void> {
     workers.sendOrderToFfwWorker.stop()
     workers.sendOutboundCtnToTransportWorker.stop()
     workers.paymentWorker.stop()
+
+    if (rabbitConsumer) await rabbitConsumer.close()
+    if (rabbitPublisher) await rabbitPublisher.close()
+
     const p: any = (globalThis as any).process
     if (p) p.exitCode = 0
     return
@@ -186,6 +212,22 @@ async function main(): Promise<void> {
   }
 
   console.log('Workers will drive the process. Watch logs or Operate.')
+
+  // Graceful shutdown for non-mock mode
+  const shutdown = async () => {
+    console.log('\nShutting down...')
+    workers.fillCertificateWorker.stop()
+    workers.handleOrderWorker.stop()
+    workers.sendOrderToFfwWorker.stop()
+    workers.sendOutboundCtnToTransportWorker.stop()
+    workers.paymentWorker.stop()
+    if (rabbitConsumer) await rabbitConsumer.close()
+    if (rabbitPublisher) await rabbitPublisher.close()
+    process.exit(0)
+  }
+
+  process.on('SIGINT', shutdown)
+  process.on('SIGTERM', shutdown)
 }
 
 main().catch((err) => {
