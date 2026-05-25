@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+  id="Definitions_1"
+  targetNamespace="http://bpmn.io/schema/bpmn"
+  exporter="Camunda Modeler"
+  exporterVersion="5.44.0">
+
+  <bpmn:message id="Message_ShipArrival" name="ship-arrival-message">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmn:message id="Message_OutboundCtnReceived" name="outbound-ctn-received">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmn:message id="Message_ManifestReceived" name="manifest-received">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmn:message id="Message_CustomsClearanceReceived" name="customs-clearance-received">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+
+  <bpmn:process id="Terminal-Process" name="Container Terminal Process" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_Start_To_SyncSplit</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:parallelGateway id="Gateway_SyncSplit">
+      <bpmn:incoming>Flow_Start_To_SyncSplit</bpmn:incoming>
+      <bpmn:outgoing>Flow_SyncSplit_To_ShipArrival</bpmn:outgoing>
+      <bpmn:outgoing>Flow_SyncSplit_To_OutboundCtn</bpmn:outgoing>
+      <bpmn:outgoing>Flow_SyncSplit_To_Manifest</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:intermediateCatchEvent id="Catch_ShipArrival" name="Ship arrival message">
+      <bpmn:incoming>Flow_SyncSplit_To_ShipArrival</bpmn:incoming>
+      <bpmn:outgoing>Flow_ShipArrival_To_SyncJoin</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ShipArrival" messageRef="Message_ShipArrival" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:intermediateCatchEvent id="Catch_OutboundCtnReceived" name="Outbound CTN received">
+      <bpmn:incoming>Flow_SyncSplit_To_OutboundCtn</bpmn:incoming>
+      <bpmn:outgoing>Flow_OutboundCtn_To_SyncJoin</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_OutboundCtnReceived" messageRef="Message_OutboundCtnReceived" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:intermediateCatchEvent id="Catch_ManifestReceived" name="Manifest received">
+      <bpmn:incoming>Flow_SyncSplit_To_Manifest</bpmn:incoming>
+      <bpmn:outgoing>Flow_Manifest_To_SyncJoin</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ManifestReceived" messageRef="Message_ManifestReceived" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:parallelGateway id="Gateway_SyncJoin">
+      <bpmn:incoming>Flow_ShipArrival_To_SyncJoin</bpmn:incoming>
+      <bpmn:incoming>Flow_OutboundCtn_To_SyncJoin</bpmn:incoming>
+      <bpmn:incoming>Flow_Manifest_To_SyncJoin</bpmn:incoming>
+      <bpmn:outgoing>Flow_SyncJoin_To_LoadCtn</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:serviceTask id="Task_LoadCtn" name="load CTN">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="load-ctn" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SyncJoin_To_LoadCtn</bpmn:incoming>
+      <bpmn:outgoing>Flow_LoadCtn_To_SendArrival</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_SendArrivalToCustoms" name="send arrival message to Customs">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-arrival-to-customs" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_LoadCtn_To_SendArrival</bpmn:incoming>
+      <bpmn:outgoing>Flow_SendArrival_To_CustomsClearance</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:intermediateCatchEvent id="Catch_CustomsClearanceReceived" name="Customs Clearance received">
+      <bpmn:incoming>Flow_SendArrival_To_CustomsClearance</bpmn:incoming>
+      <bpmn:outgoing>Flow_CustomsClearance_To_Departure</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_CustomsClearanceReceived" messageRef="Message_CustomsClearanceReceived" />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:serviceTask id="Task_Departure" name="departure">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="departure" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CustomsClearance_To_Departure</bpmn:incoming>
+      <bpmn:outgoing>Flow_Departure_To_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_Normal">
+      <bpmn:incoming>Flow_Departure_To_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Start_To_SyncSplit" sourceRef="StartEvent_1" targetRef="Gateway_SyncSplit" />
+    <bpmn:sequenceFlow id="Flow_SyncSplit_To_ShipArrival" sourceRef="Gateway_SyncSplit" targetRef="Catch_ShipArrival" />
+    <bpmn:sequenceFlow id="Flow_SyncSplit_To_OutboundCtn" sourceRef="Gateway_SyncSplit" targetRef="Catch_OutboundCtnReceived" />
+    <bpmn:sequenceFlow id="Flow_SyncSplit_To_Manifest" sourceRef="Gateway_SyncSplit" targetRef="Catch_ManifestReceived" />
+    <bpmn:sequenceFlow id="Flow_ShipArrival_To_SyncJoin" sourceRef="Catch_ShipArrival" targetRef="Gateway_SyncJoin" />
+    <bpmn:sequenceFlow id="Flow_OutboundCtn_To_SyncJoin" sourceRef="Catch_OutboundCtnReceived" targetRef="Gateway_SyncJoin" />
+    <bpmn:sequenceFlow id="Flow_Manifest_To_SyncJoin" sourceRef="Catch_ManifestReceived" targetRef="Gateway_SyncJoin" />
+    <bpmn:sequenceFlow id="Flow_SyncJoin_To_LoadCtn" sourceRef="Gateway_SyncJoin" targetRef="Task_LoadCtn" />
+    <bpmn:sequenceFlow id="Flow_LoadCtn_To_SendArrival" sourceRef="Task_LoadCtn" targetRef="Task_SendArrivalToCustoms" />
+    <bpmn:sequenceFlow id="Flow_SendArrival_To_CustomsClearance" sourceRef="Task_SendArrivalToCustoms" targetRef="Catch_CustomsClearanceReceived" />
+    <bpmn:sequenceFlow id="Flow_CustomsClearance_To_Departure" sourceRef="Catch_CustomsClearanceReceived" targetRef="Task_Departure" />
+    <bpmn:sequenceFlow id="Flow_Departure_To_End" sourceRef="Task_Departure" targetRef="EndEvent_Normal" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Terminal-Process">
+      <bpmndi:BPMNShape id="Shape_StartEvent_1" bpmnElement="StartEvent_1">
+        <dc:Bounds x="140" y="250" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Gateway_SyncSplit" bpmnElement="Gateway_SyncSplit" isMarkerVisible="true">
+        <dc:Bounds x="235" y="243" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Catch_ShipArrival" bpmnElement="Catch_ShipArrival">
+        <dc:Bounds x="382" y="128" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="360" y="171" width="82" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Catch_OutboundCtnReceived" bpmnElement="Catch_OutboundCtnReceived">
+        <dc:Bounds x="382" y="250" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="347" y="293" width="106" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Catch_ManifestReceived" bpmnElement="Catch_ManifestReceived">
+        <dc:Bounds x="382" y="372" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="361" y="415" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Gateway_SyncJoin" bpmnElement="Gateway_SyncJoin" isMarkerVisible="true">
+        <dc:Bounds x="545" y="243" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_LoadCtn" bpmnElement="Task_LoadCtn">
+        <dc:Bounds x="680" y="228" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_SendArrivalToCustoms" bpmnElement="Task_SendArrivalToCustoms">
+        <dc:Bounds x="850" y="228" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Catch_CustomsClearanceReceived" bpmnElement="Catch_CustomsClearanceReceived">
+        <dc:Bounds x="1050" y="250" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1023" y="293" width="91" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_Departure" bpmnElement="Task_Departure">
+        <dc:Bounds x="1160" y="228" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_Normal" bpmnElement="EndEvent_Normal">
+        <dc:Bounds x="1340" y="250" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Edge_Start_To_SyncSplit" bpmnElement="Flow_Start_To_SyncSplit">
+        <di:waypoint x="176" y="268" />
+        <di:waypoint x="235" y="268" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_SyncSplit_To_ShipArrival" bpmnElement="Flow_SyncSplit_To_ShipArrival">
+        <di:waypoint x="260" y="243" />
+        <di:waypoint x="260" y="146" />
+        <di:waypoint x="382" y="146" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_SyncSplit_To_OutboundCtn" bpmnElement="Flow_SyncSplit_To_OutboundCtn">
+        <di:waypoint x="285" y="268" />
+        <di:waypoint x="382" y="268" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_SyncSplit_To_Manifest" bpmnElement="Flow_SyncSplit_To_Manifest">
+        <di:waypoint x="260" y="293" />
+        <di:waypoint x="260" y="390" />
+        <di:waypoint x="382" y="390" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_ShipArrival_To_SyncJoin" bpmnElement="Flow_ShipArrival_To_SyncJoin">
+        <di:waypoint x="418" y="146" />
+        <di:waypoint x="570" y="146" />
+        <di:waypoint x="570" y="243" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_OutboundCtn_To_SyncJoin" bpmnElement="Flow_OutboundCtn_To_SyncJoin">
+        <di:waypoint x="418" y="268" />
+        <di:waypoint x="545" y="268" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Manifest_To_SyncJoin" bpmnElement="Flow_Manifest_To_SyncJoin">
+        <di:waypoint x="418" y="390" />
+        <di:waypoint x="570" y="390" />
+        <di:waypoint x="570" y="293" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_SyncJoin_To_LoadCtn" bpmnElement="Flow_SyncJoin_To_LoadCtn">
+        <di:waypoint x="595" y="268" />
+        <di:waypoint x="680" y="268" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_LoadCtn_To_SendArrival" bpmnElement="Flow_LoadCtn_To_SendArrival">
+        <di:waypoint x="780" y="268" />
+        <di:waypoint x="850" y="268" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_SendArrival_To_CustomsClearance" bpmnElement="Flow_SendArrival_To_CustomsClearance">
+        <di:waypoint x="970" y="268" />
+        <di:waypoint x="1050" y="268" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_CustomsClearance_To_Departure" bpmnElement="Flow_CustomsClearance_To_Departure">
+        <di:waypoint x="1086" y="268" />
+        <di:waypoint x="1160" y="268" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Departure_To_End" bpmnElement="Flow_Departure_To_End">
+        <di:waypoint x="1260" y="268" />
+        <di:waypoint x="1340" y="268" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
