@@ -1,0 +1,22 @@
+{
+  "name": "container-terminal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "container-terminal.js",
+  "scripts": {
+    "start": "node container-terminal.js",
+    "test:full": "node test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "zeebe-node": "^8.3.2"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.3",
+    "fast-xml-parser": "^5.8.0"
+  }
+}
