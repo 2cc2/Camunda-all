@@ -13,6 +13,8 @@ import { CamundaRestClient, Dto } from '@camunda8/sdk'
 import { JOB_TYPES, MESSAGE_NAMES, PARTY } from './config'
 import { OwnerProcessVariables } from './types'
 import { buildOrderToFfw, buildOutboundCtnToTransport } from './messages'
+import { RabbitMQPublisher } from './rabbitmq/publisher'
+import { sendOutboundMessage } from './outbound-adapter'
 
 // Re-export Dto for type reuse
 class OwnerVariables extends Dto.LosslessDto implements OwnerProcessVariables {
@@ -63,7 +65,10 @@ function withCommonFields(orderId: string, senderId: string, extra: Record<strin
   }
 }
 
-export function startOwnerContractWorkers(client: CamundaRestClient) {
+export function startOwnerContractWorkers(
+  client: CamundaRestClient,
+  rabbitPublisher?: RabbitMQPublisher
+) {
   // --------------------------------------------------------------------------
   // 1. fill-out-certificate-of-entrustment
   // --------------------------------------------------------------------------
@@ -145,11 +150,14 @@ export function startOwnerContractWorkers(client: CamundaRestClient) {
       }
 
       log.info(`[send-order-to-ffw] jobKey=${job.jobKey} orderId=${orderId}`)
-      const response = await client.publishMessage({
-        ...payload,
-        timeToLive: 600
-      })
-      log.info(`[send-order-to-ffw] publishResponse=${JSON.stringify(response)}`)
+      await sendOutboundMessage(
+        rabbitPublisher,
+        client,
+        MESSAGE_NAMES.orderToFfw,
+        orderId,
+        payload.variables,
+        600
+      )
 
       return job.complete({ orderSentToFfw: true })
     }
@@ -182,11 +190,14 @@ export function startOwnerContractWorkers(client: CamundaRestClient) {
       }
 
       log.info(`[send-outbound-ctn-to-transport] jobKey=${job.jobKey} orderId=${orderId} ctn=${ctnNumber}`)
-      const response = await client.publishMessage({
-        ...payload,
-        timeToLive: 600
-      })
-      log.info(`[send-outbound-ctn-to-transport] publishResponse=${JSON.stringify(response)}`)
+      await sendOutboundMessage(
+        rabbitPublisher,
+        client,
+        MESSAGE_NAMES.outboundCtnToTransport,
+        orderId,
+        payload.variables,
+        600
+      )
 
       return job.complete({ outboundCtnSentToTransport: true })
     }
