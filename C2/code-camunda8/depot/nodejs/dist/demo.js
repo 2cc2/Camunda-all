@@ -12,10 +12,12 @@
  * 4. Workers drive the process to completion
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.runDemo = runDemo;
 const sdk_1 = require("@camunda8/sdk");
 const config_1 = require("./config");
 const mock_inbound_1 = require("./mock-inbound");
 const workers_1 = require("./workers");
+const bridge_1 = require("./rabbitmq/bridge");
 function pad3(n) {
     return String(n).padStart(3, '0');
 }
@@ -56,10 +58,11 @@ async function deployDepotModel(client) {
     console.log(`Deployed 1 BPMN resources. deploymentKey=${res?.deploymentKey ?? 'unknown'} processes=${processCount}`);
 }
 async function startDepotProcessByMessage(client, orderId) {
-    await (0, mock_inbound_1.publishStartMessage)(client, orderId);
-    console.log(`Depot process start message published. bpmnProcessId=${config_1.PROCESS_IDS.depot} startMessage=${config_1.MESSAGE_NAMES.askForCtn}`);
+    void client;
+    void orderId;
+    console.log(`Depot process will be started through RabbitMQ and forwarded into ${config_1.PROCESS_IDS.depot}.`);
 }
-async function main() {
+async function runDemo() {
     const { orderId, mockInbound } = parseArgs();
     await assertReachable(config_1.CAMUNDA_REST_ADDRESS);
     const client = new sdk_1.Camunda8({
@@ -69,31 +72,38 @@ async function main() {
     });
     const restClient = client.getCamundaRestClient();
     const grpcClient = client.getZeebeGrpcApiClient();
-    const workers = (0, workers_1.startDepotContractWorkers)(restClient);
+    const bridge = new bridge_1.CamundaRabbitMQBridge();
+    await bridge.connect();
+    await bridge.start();
+    const workers = (0, workers_1.startDepotContractWorkers)(restClient, bridge.publisher);
     console.log(`Starting Depot contract demo with orderId=${orderId}`);
     console.log(`REST endpoint: ${config_1.CAMUNDA_REST_ADDRESS}`);
     console.log(`gRPC endpoint: ${config_1.CAMUNDA_GRPC_ADDRESS}`);
     await deployDepotModel(grpcClient);
     if (mockInbound) {
-        await startDepotProcessByMessage(grpcClient, orderId);
-        await (0, mock_inbound_1.publishFollowupInboundMessages)(grpcClient, orderId, (ms) => new Promise((r) => setTimeout(r, ms + 2500)));
+        await startDepotProcessByMessage(bridge.publisher, orderId);
+        await (0, mock_inbound_1.publishStartMessage)(bridge.publisher, orderId);
+        await (0, mock_inbound_1.publishFollowupInboundMessages)(bridge.publisher, orderId, (ms) => new Promise((r) => setTimeout(r, ms + 2500)));
         await new Promise((r) => setTimeout(r, 5000));
         workers.sendEmptyCtnToTransportWorker.stop();
         workers.sendCtnArrivalInfoToSaWorker.stop();
         workers.sendOutboundCtnToCtWorker.stop();
+        await bridge.close();
         await grpcClient.close();
         const p = globalThis.process;
         if (p)
             p.exitCode = 0;
         return;
     }
-    console.log(`mockInbound=false: please externally publish ${config_1.MESSAGE_NAMES.askForCtn} to start the process, then correlate ${config_1.MESSAGE_NAMES.outboundCtnToDepot} using correlationKey=orderId.`);
+    console.log('mockInbound=false: please publish ask-for-ctn and outbound-ctn-to-depot to RabbitMQ using correlationKey=orderId.');
     console.log('Workers will drive the process. Watch logs or Operate.');
 }
-main().catch((err) => {
-    console.error(err);
-    const p = globalThis.process;
-    if (p)
-        p.exitCode = 1;
-});
+if (require.main === module) {
+    runDemo().catch((err) => {
+        console.error(err);
+        const p = globalThis.process;
+        if (p)
+            p.exitCode = 1;
+    });
+}
 //# sourceMappingURL=demo.js.map

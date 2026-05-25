@@ -15,6 +15,12 @@ function createFakeJob(initialVariables: Record<string, unknown>) {
 }
 
 describe('startDepotContractWorkers', () => {
+  function createPublisher() {
+    return {
+      publishMessage: jest.fn(async () => undefined)
+    }
+  }
+
   test('registers all Depot worker types', () => {
     const registrations: WorkerRegistration[] = []
     const client = {
@@ -25,7 +31,7 @@ describe('startDepotContractWorkers', () => {
       publishMessage: jest.fn()
     }
 
-    startDepotContractWorkers(client as any)
+    startDepotContractWorkers(client as any, createPublisher() as any)
 
     expect(registrations.map((r) => r.type)).toEqual([
       JOB_TYPES.sendEmptyCtnToTransport,
@@ -36,15 +42,15 @@ describe('startDepotContractWorkers', () => {
 
   test('send-empty-ctn-to-transport publishes the expected outbound message', async () => {
     const registrations: WorkerRegistration[] = []
+    const publisher = createPublisher()
     const client = {
       createJobWorker: jest.fn((config: WorkerRegistration) => {
         registrations.push(config)
         return { stop: jest.fn() }
-      }),
-      publishMessage: jest.fn(async () => ({ messageKey: 'm1' }))
+      })
     }
 
-    startDepotContractWorkers(client as any)
+    startDepotContractWorkers(client as any, publisher as any)
     const handler = registrations.find((r) => r.type === JOB_TYPES.sendEmptyCtnToTransport)?.jobHandler
     const job = createFakeJob({
       orderId: 'ORDER-20260507-011',
@@ -55,17 +61,16 @@ describe('startDepotContractWorkers', () => {
 
     await handler?.(job, { info: jest.fn() })
 
-    expect(client.publishMessage).toHaveBeenCalledWith(expect.objectContaining({
-      name: MESSAGE_NAMES.emptyCtnToTransport,
-      correlationKey: 'ORDER-20260507-011',
-      timeToLive: 600,
-      variables: expect.objectContaining({
+    expect(publisher.publishMessage).toHaveBeenCalledWith(
+      MESSAGE_NAMES.emptyCtnToTransport,
+      'ORDER-20260507-011',
+      expect.objectContaining({
         senderId: PARTY.depot.id,
         transportId: PARTY.transport.id,
         containerId: 'MSKU1234567',
         vesselId: 'VESSEL-042'
       })
-    }))
+    )
     expect(job.complete).toHaveBeenCalledWith({
       containerId: 'MSKU1234567',
       vesselId: 'VESSEL-042',
@@ -75,15 +80,15 @@ describe('startDepotContractWorkers', () => {
 
   test('send-ctn-arrival-info-to-sa keeps explicit arrival variables', async () => {
     const registrations: WorkerRegistration[] = []
+    const publisher = createPublisher()
     const client = {
       createJobWorker: jest.fn((config: WorkerRegistration) => {
         registrations.push(config)
         return { stop: jest.fn() }
-      }),
-      publishMessage: jest.fn(async () => ({ messageKey: 'm2' }))
+      })
     }
 
-    startDepotContractWorkers(client as any)
+    startDepotContractWorkers(client as any, publisher as any)
     const handler = registrations.find((r) => r.type === JOB_TYPES.sendCtnArrivalInfoToSa)?.jobHandler
     const job = createFakeJob({
       orderId: 'ORDER-20260507-012',
@@ -96,15 +101,15 @@ describe('startDepotContractWorkers', () => {
 
     await handler?.(job, { info: jest.fn() })
 
-    expect(client.publishMessage).toHaveBeenCalledWith(expect.objectContaining({
-      name: MESSAGE_NAMES.ctnArrivalInfoToSa,
-      correlationKey: 'ORDER-20260507-012',
-      variables: expect.objectContaining({
+    expect(publisher.publishMessage).toHaveBeenCalledWith(
+      MESSAGE_NAMES.ctnArrivalInfoToSa,
+      'ORDER-20260507-012',
+      expect.objectContaining({
         shippingAgencyId: PARTY.shippingAgency.id,
         arrivalTime: '2026-05-07T10:00:00Z',
         terminalLocation: 'Shanghai Waigaoqiao Depot'
       })
-    }))
+    )
     expect(job.complete).toHaveBeenCalledWith({
       arrivalTime: '2026-05-07T10:00:00Z',
       terminalLocation: 'Shanghai Waigaoqiao Depot',
@@ -114,15 +119,15 @@ describe('startDepotContractWorkers', () => {
 
   test('send-outbound-ctn-to-ct publishes receipt and completion info', async () => {
     const registrations: WorkerRegistration[] = []
+    const publisher = createPublisher()
     const client = {
       createJobWorker: jest.fn((config: WorkerRegistration) => {
         registrations.push(config)
         return { stop: jest.fn() }
-      }),
-      publishMessage: jest.fn(async () => ({ messageKey: 'm3' }))
+      })
     }
 
-    startDepotContractWorkers(client as any)
+    startDepotContractWorkers(client as any, publisher as any)
     const handler = registrations.find((r) => r.type === JOB_TYPES.sendOutboundCtnToCt)?.jobHandler
     const job = createFakeJob({
       orderId: 'ORDER-20260507-013',
@@ -139,16 +144,16 @@ describe('startDepotContractWorkers', () => {
 
     await handler?.(job, { info: jest.fn() })
 
-    expect(client.publishMessage).toHaveBeenCalledWith(expect.objectContaining({
-      name: MESSAGE_NAMES.outboundCtnToCt,
-      correlationKey: 'ORDER-20260507-013',
-      variables: expect.objectContaining({
+    expect(publisher.publishMessage).toHaveBeenCalledWith(
+      MESSAGE_NAMES.outboundCtnToCt,
+      'ORDER-20260507-013',
+      expect.objectContaining({
         containerTerminalId: PARTY.containerTerminal.id,
         containerId: 'MSKU1234567',
         receiptId: 'RECEIPT-20260507-003',
         loadingCompletedTime: '2026-05-07T11:30:00Z'
       })
-    }))
+    )
     expect(job.complete).toHaveBeenCalledWith({
       outboundCtnSentToCt: true,
       loadingCompletedTime: '2026-05-07T11:30:00Z'

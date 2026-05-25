@@ -9,10 +9,11 @@
  * - All messages carry common fields: orderId, timestamp, senderId
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PROCESS_IDS = exports.MESSAGE_NAMES = exports.JOB_TYPES = exports.PARTY = exports.CAMUNDA_GRPC_ADDRESS = exports.CAMUNDA_REST_ADDRESS = exports.CAMUNDA_AUTH_STRATEGY = void 0;
+exports.PROCESS_IDS = exports.MESSAGE_NAMES = exports.JOB_TYPES = exports.PARTY = exports.CAMUNDA_REST_PUBLISH_ENDPOINT = exports.CAMUNDA_GRPC_ADDRESS = exports.CAMUNDA_REST_ADDRESS = exports.CAMUNDA_AUTH_STRATEGY = void 0;
 exports.CAMUNDA_AUTH_STRATEGY = 'NONE';
 exports.CAMUNDA_REST_ADDRESS = process.env.CAMUNDA_REST_ADDRESS ?? 'http://localhost:8080';
 exports.CAMUNDA_GRPC_ADDRESS = process.env.CAMUNDA_GRPC_ADDRESS ?? 'grpc://localhost:26500';
+exports.CAMUNDA_REST_PUBLISH_ENDPOINT = '/v2/messages/publication';
 /** Party identifiers used by the Depot module */
 exports.PARTY = {
     depot: { id: 'DEPOT-01', name: 'Depot (DPT)' },

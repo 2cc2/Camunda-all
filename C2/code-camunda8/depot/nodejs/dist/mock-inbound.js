@@ -14,8 +14,8 @@ exports.publishStartMessage = publishStartMessage;
 exports.publishFollowupInboundMessages = publishFollowupInboundMessages;
 exports.publishMockInboundMessages = publishMockInboundMessages;
 exports.main = main;
-const sdk_1 = require("@camunda8/sdk");
 const config_1 = require("./config");
+const publisher_1 = require("./rabbitmq/publisher");
 function nowIso() {
     return new Date().toISOString();
 }
@@ -36,6 +36,7 @@ function buildOutboundCtnToDepotMockVariables(orderId) {
         ctnNumber: 'MSKU1234567',
         vesselId: 'VESSEL-042',
         handOverTime: nowIso(),
+        handoverTime: nowIso(),
         receiptId: 'RECEIPT-20260507-001',
         driverName: 'Zhang San',
         carLicense: 'HU-A-12345'
@@ -54,22 +55,12 @@ function parseArgs(argv = globalThis.process?.argv ?? []) {
     return { orderId };
 }
 async function publishStartMessage(client, orderId) {
-    await client.publishMessage({
-        name: config_1.MESSAGE_NAMES.askForCtn,
-        correlationKey: orderId,
-        timeToLive: 600,
-        variables: buildAskForCtnMockVariables(orderId)
-    });
+    await client.publishMessage(config_1.MESSAGE_NAMES.askForCtn, orderId, buildAskForCtnMockVariables(orderId));
     console.log(`[mock] published ${config_1.MESSAGE_NAMES.askForCtn}`);
 }
 async function publishFollowupInboundMessages(client, orderId, sleep = (ms) => new Promise((r) => setTimeout(r, ms))) {
     await sleep(1500);
-    await client.publishMessage({
-        name: config_1.MESSAGE_NAMES.outboundCtnToDepot,
-        correlationKey: orderId,
-        timeToLive: 600,
-        variables: buildOutboundCtnToDepotMockVariables(orderId)
-    });
+    await client.publishMessage(config_1.MESSAGE_NAMES.outboundCtnToDepot, orderId, buildOutboundCtnToDepotMockVariables(orderId));
     console.log(`[mock] published ${config_1.MESSAGE_NAMES.outboundCtnToDepot}`);
 }
 async function publishMockInboundMessages(client, orderId, sleep = (ms) => new Promise((r) => setTimeout(r, ms))) {
@@ -78,11 +69,10 @@ async function publishMockInboundMessages(client, orderId, sleep = (ms) => new P
 }
 async function main() {
     const { orderId } = parseArgs();
-    const client = new sdk_1.Camunda8({
-        CAMUNDA_AUTH_STRATEGY: config_1.CAMUNDA_AUTH_STRATEGY,
-        ZEEBE_REST_ADDRESS: config_1.CAMUNDA_REST_ADDRESS,
-        ZEEBE_GRPC_ADDRESS: config_1.CAMUNDA_GRPC_ADDRESS
-    }).getZeebeGrpcApiClient();
+    void config_1.CAMUNDA_AUTH_STRATEGY;
+    void config_1.CAMUNDA_GRPC_ADDRESS;
+    const client = new publisher_1.RabbitMQPublisher();
+    await client.connect();
     console.log(`Publishing inbound Depot messages for orderId=${orderId}`);
     await publishMockInboundMessages(client, orderId);
     await client.close();

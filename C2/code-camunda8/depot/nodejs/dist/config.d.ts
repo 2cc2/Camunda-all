@@ -10,6 +10,7 @@
 export declare const CAMUNDA_AUTH_STRATEGY: "NONE";
 export declare const CAMUNDA_REST_ADDRESS: string;
 export declare const CAMUNDA_GRPC_ADDRESS: string;
+export declare const CAMUNDA_REST_PUBLISH_ENDPOINT = "/v2/messages/publication";
 /** Party identifiers used by the Depot module */
 export declare const PARTY: {
     readonly depot: {

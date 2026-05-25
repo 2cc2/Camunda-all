@@ -11,6 +11,7 @@
 export const CAMUNDA_AUTH_STRATEGY = 'NONE' as const
 export const CAMUNDA_REST_ADDRESS = process.env.CAMUNDA_REST_ADDRESS ?? 'http://localhost:8080'
 export const CAMUNDA_GRPC_ADDRESS = process.env.CAMUNDA_GRPC_ADDRESS ?? 'grpc://localhost:26500'
+export const CAMUNDA_REST_PUBLISH_ENDPOINT = '/v2/messages/publication'
 
 /** Party identifiers used by the Depot module */
 export const PARTY = {

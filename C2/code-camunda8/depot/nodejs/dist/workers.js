@@ -33,7 +33,21 @@ class DepotVariables extends sdk_1.Dto.LosslessDto {
 function optionalString(value) {
     return typeof value === 'string' && value.trim() !== '' ? value : undefined;
 }
-function startDepotContractWorkers(client) {
+class DirectCamundaMessagePublisher {
+    client;
+    constructor(client) {
+        this.client = client;
+    }
+    async publishMessage(name, correlationKey, variables) {
+        await this.client.publishMessage({
+            name,
+            correlationKey,
+            timeToLive: 600,
+            variables
+        });
+    }
+}
+function startDepotContractWorkers(client, publisher = new DirectCamundaMessagePublisher(client)) {
     const sendEmptyCtnToTransportWorker = client.createJobWorker({
         type: config_1.JOB_TYPES.sendEmptyCtnToTransport,
         timeout: 10000,
@@ -41,17 +55,10 @@ function startDepotContractWorkers(client) {
         worker: 'dpt-send-empty-ctn-to-transport',
         jobHandler: async (job, log) => {
             const ask = (0, messages_1.parseAskForCtn)(job.variables);
-            const payload = {
-                name: config_1.MESSAGE_NAMES.emptyCtnToTransport,
-                correlationKey: ask.orderId,
-                variables: (0, messages_1.buildEmptyCtnToTransport)(ask.orderId, ask.containerId, ask.vesselId)
-            };
+            const variables = (0, messages_1.buildEmptyCtnToTransport)(ask.orderId, ask.containerId, ask.vesselId);
             log.info(`[send-empty-ctn-to-transport] jobKey=${job.jobKey} orderId=${ask.orderId}`);
-            const response = await client.publishMessage({
-                ...payload,
-                timeToLive: 600
-            });
-            log.info(`[send-empty-ctn-to-transport] publishResponse=${JSON.stringify(response)}`);
+            await publisher.publishMessage(config_1.MESSAGE_NAMES.emptyCtnToTransport, ask.orderId, variables);
+            log.info(`[send-empty-ctn-to-transport] published=${config_1.MESSAGE_NAMES.emptyCtnToTransport}`);
             return job.complete({
                 containerId: ask.containerId,
                 vesselId: ask.vesselId,
@@ -68,20 +75,13 @@ function startDepotContractWorkers(client) {
             const ask = (0, messages_1.parseAskForCtn)(job.variables);
             const arrivalTime = optionalString(job.variables.arrivalTime);
             const terminalLocation = optionalString(job.variables.terminalLocation);
-            const payload = {
-                name: config_1.MESSAGE_NAMES.ctnArrivalInfoToSa,
-                correlationKey: ask.orderId,
-                variables: (0, messages_1.buildCtnArrivalInfoToSa)(ask.orderId, ask.containerId, ask.vesselId, arrivalTime, terminalLocation)
-            };
+            const variables = (0, messages_1.buildCtnArrivalInfoToSa)(ask.orderId, ask.containerId, ask.vesselId, arrivalTime, terminalLocation);
             log.info(`[send-ctn-arrival-info-to-sa] jobKey=${job.jobKey} orderId=${ask.orderId}`);
-            const response = await client.publishMessage({
-                ...payload,
-                timeToLive: 600
-            });
-            log.info(`[send-ctn-arrival-info-to-sa] publishResponse=${JSON.stringify(response)}`);
+            await publisher.publishMessage(config_1.MESSAGE_NAMES.ctnArrivalInfoToSa, ask.orderId, variables);
+            log.info(`[send-ctn-arrival-info-to-sa] published=${config_1.MESSAGE_NAMES.ctnArrivalInfoToSa}`);
             return job.complete({
-                arrivalTime: payload.variables.arrivalTime,
-                terminalLocation: payload.variables.terminalLocation,
+                arrivalTime: variables.arrivalTime,
+                terminalLocation: variables.terminalLocation,
                 ctnArrivalInfoSentToSa: true
             });
         }
@@ -95,20 +95,13 @@ function startDepotContractWorkers(client) {
             const outbound = (0, messages_1.parseOutboundCtnToDepot)(job.variables);
             const terminalLocation = optionalString(job.variables.terminalLocation);
             const loadingCompletedTime = optionalString(job.variables.loadingCompletedTime);
-            const payload = {
-                name: config_1.MESSAGE_NAMES.outboundCtnToCt,
-                correlationKey: outbound.orderId,
-                variables: (0, messages_1.buildOutboundCtnToCt)(outbound.orderId, outbound.ctnNumber, outbound.vesselId, outbound.receiptId, loadingCompletedTime, terminalLocation, outbound.handOverTime, outbound.driverName, outbound.carLicense)
-            };
+            const variables = (0, messages_1.buildOutboundCtnToCt)(outbound.orderId, outbound.ctnNumber, outbound.vesselId, outbound.receiptId, loadingCompletedTime, terminalLocation, outbound.handOverTime, outbound.driverName, outbound.carLicense);
             log.info(`[send-outbound-ctn-to-ct] jobKey=${job.jobKey} orderId=${outbound.orderId}`);
-            const response = await client.publishMessage({
-                ...payload,
-                timeToLive: 600
-            });
-            log.info(`[send-outbound-ctn-to-ct] publishResponse=${JSON.stringify(response)}`);
+            await publisher.publishMessage(config_1.MESSAGE_NAMES.outboundCtnToCt, outbound.orderId, variables);
+            log.info(`[send-outbound-ctn-to-ct] published=${config_1.MESSAGE_NAMES.outboundCtnToCt}`);
             return job.complete({
                 outboundCtnSentToCt: true,
-                loadingCompletedTime: payload.variables.loadingCompletedTime
+                loadingCompletedTime: variables.loadingCompletedTime
             });
         }
     });

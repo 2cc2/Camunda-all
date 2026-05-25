@@ -13,6 +13,32 @@
 - BPMN: [depot.bpmn](/E:/1_course/Phd_Y1_S2/Concurrency_theory/Project20260331/Camunda/code-camunda8/depot/bpmn/depot.bpmn:1)
 - Node.js: [code-camunda8/depot/nodejs](/E:/1_course/Phd_Y1_S2/Concurrency_theory/Project20260331/Camunda/code-camunda8/depot/nodejs)
 
+## 1.1 当前实现状态（2026-05-25）
+
+当前 `Depot` Node.js 版本已经从“直接向 Camunda publishMessage”升级为“RabbitMQ 作为消息中间件”的实现：
+
+- 入站：
+  - `ask-for-ctn`
+  - `outbound-ctn-to-depot`
+  - 先发布到 RabbitMQ，再由 Bridge Consumer 转发到 Camunda
+- 出站：
+  - `empty-ctn-to-transport`
+  - `ctn-arrival-info-to-sa`
+  - `outbound-ctn-to-ct`
+  - 由 Worker 发布到 RabbitMQ，下游参与方可直接从各自队列联调
+- 兼容性：
+  - `outbound-ctn-to-depot` 同时兼容 `handOverTime` 与 C3 当前使用过的 `handoverTime`
+
+当前 Node.js 目录额外包含：
+
+- `source/rabbitmq/config.ts`
+- `source/rabbitmq/publisher.ts`
+- `source/rabbitmq/consumer.ts`
+- `source/rabbitmq/bridge.ts`
+- `source/rabbitmq/observer.ts`
+- `source/watch-outbound.ts`
+- `source/demo-e2e.ts`
+
 ## 2. 业务边界
 
 `Depot` 在当前项目中的职责是处理出口协作链路中的货场环节。

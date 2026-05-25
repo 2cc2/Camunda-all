@@ -50,15 +50,14 @@ describe('Depot mock inbound helpers', () => {
     await publishStartMessage(client, 'ORDER-20260507-104')
 
     expect(client.publishMessage).toHaveBeenCalledTimes(1)
-    expect(client.publishMessage).toHaveBeenCalledWith(expect.objectContaining({
-      name: MESSAGE_NAMES.askForCtn,
-      correlationKey: 'ORDER-20260507-104',
-      timeToLive: 600,
-      variables: expect.objectContaining({
+    expect(client.publishMessage).toHaveBeenCalledWith(
+      MESSAGE_NAMES.askForCtn,
+      'ORDER-20260507-104',
+      expect.objectContaining({
         senderId: PARTY.shippingAgency.id,
         containerId: 'MSKU1234567'
       })
-    }))
+    )
   })
 
   test('publishFollowupInboundMessages emits the follow-up inbound message', async () => {
@@ -70,16 +69,15 @@ describe('Depot mock inbound helpers', () => {
     await publishFollowupInboundMessages(client, 'ORDER-20260507-105', sleep)
 
     expect(client.publishMessage).toHaveBeenCalledTimes(1)
-    expect(client.publishMessage).toHaveBeenCalledWith(expect.objectContaining({
-      name: MESSAGE_NAMES.outboundCtnToDepot,
-      correlationKey: 'ORDER-20260507-105',
-      timeToLive: 600,
-      variables: expect.objectContaining({
+    expect(client.publishMessage).toHaveBeenCalledWith(
+      MESSAGE_NAMES.outboundCtnToDepot,
+      'ORDER-20260507-105',
+      expect.objectContaining({
         senderId: PARTY.transport.id,
         ctnNumber: 'MSKU1234567',
         receiptId: 'RECEIPT-20260507-001'
       })
-    }))
+    )
     expect(sleep).toHaveBeenCalledWith(1500)
   })
 
@@ -92,25 +90,25 @@ describe('Depot mock inbound helpers', () => {
     await publishMockInboundMessages(client, 'ORDER-20260507-106', sleep)
 
     expect(client.publishMessage).toHaveBeenCalledTimes(2)
-    expect(client.publishMessage).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      name: MESSAGE_NAMES.askForCtn,
-      correlationKey: 'ORDER-20260507-106',
-      timeToLive: 600,
-      variables: expect.objectContaining({
+    expect(client.publishMessage).toHaveBeenNthCalledWith(
+      1,
+      MESSAGE_NAMES.askForCtn,
+      'ORDER-20260507-106',
+      expect.objectContaining({
         senderId: PARTY.shippingAgency.id,
         containerId: 'MSKU1234567'
       })
-    }))
-    expect(client.publishMessage).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      name: MESSAGE_NAMES.outboundCtnToDepot,
-      correlationKey: 'ORDER-20260507-106',
-      timeToLive: 600,
-      variables: expect.objectContaining({
+    )
+    expect(client.publishMessage).toHaveBeenNthCalledWith(
+      2,
+      MESSAGE_NAMES.outboundCtnToDepot,
+      'ORDER-20260507-106',
+      expect.objectContaining({
         senderId: PARTY.transport.id,
         ctnNumber: 'MSKU1234567',
         receiptId: 'RECEIPT-20260507-001'
       })
-    }))
+    )
     expect(sleep).toHaveBeenCalledWith(1500)
   })
 })

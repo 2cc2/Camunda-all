@@ -23,6 +23,7 @@ export interface OutboundCtnToDepotPayload extends CommonFields {
     ctnNumber: string;
     vesselId: string;
     handOverTime: string;
+    handoverTime?: string;
     receiptId: string;
     driverName: string;
     carLicense: string;
@@ -65,6 +66,7 @@ export interface DepotProcessVariables {
     terminalLocation?: string;
     loadingCompletedTime?: string;
     handOverTime?: string;
+    handoverTime?: string;
     driverName?: string;
     carLicense?: string;
     emptyCtnSentToTransport?: boolean;

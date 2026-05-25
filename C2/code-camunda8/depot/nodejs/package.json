@@ -6,15 +6,21 @@
   "scripts": {
     "build": "node ./node_modules/typescript/bin/tsc -p tsconfig.json",
     "start": "node ./node_modules/ts-node/dist/bin.js source/index.ts",
+    "check:env": "node ./node_modules/ts-node/dist/bin.js source/check-env.ts",
     "demo": "node ./node_modules/ts-node/dist/bin.js source/demo.ts",
+    "demo:e2e": "node ./node_modules/ts-node/dist/bin.js source/demo-e2e.ts",
     "mock:inbound": "node ./node_modules/ts-node/dist/bin.js source/mock-inbound.ts",
+    "mock:c3": "node ./node_modules/ts-node/dist/bin.js source/mock-c3-inbound.ts",
+    "watch:outbound": "node ./node_modules/ts-node/dist/bin.js source/watch-outbound.ts",
     "test": "node ./node_modules/jest/bin/jest.js",
     "test:watch": "node ./node_modules/jest/bin/jest.js --watch"
   },
   "dependencies": {
-    "@camunda8/sdk": "^8.7.30"
+    "@camunda8/sdk": "^8.7.30",
+    "amqplib": "^0.10.9"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.8",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.15.3",
     "jest": "^29.7.0",

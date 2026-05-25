@@ -96,7 +96,7 @@ function parseOutboundCtnToDepot(raw) {
     const senderId = requireString(raw.senderId, 'senderId');
     const ctnNumber = requireString(raw.ctnNumber, 'ctnNumber');
     const vesselId = requireString(raw.vesselId, 'vesselId');
-    const handOverTime = requireString(raw.handOverTime, 'handOverTime');
+    const handOverTime = requireString(raw.handOverTime ?? raw.handoverTime, 'handOverTime');
     const receiptId = requireString(raw.receiptId, 'receiptId');
     const driverName = requireString(raw.driverName, 'driverName');
     const carLicense = requireString(raw.carLicense, 'carLicense');
@@ -110,6 +110,7 @@ function parseOutboundCtnToDepot(raw) {
         ctnNumber,
         vesselId,
         handOverTime,
+        handoverTime: handOverTime,
         receiptId,
         driverName,
         carLicense

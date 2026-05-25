@@ -10,5 +10,5 @@
  * 3. Optionally mocks inbound messages (ask-for-ctn, outbound-ctn-to-depot)
  * 4. Workers drive the process to completion
  */
-export {};
+export declare function runDemo(): Promise<void>;
 //# sourceMappingURL=demo.d.ts.map

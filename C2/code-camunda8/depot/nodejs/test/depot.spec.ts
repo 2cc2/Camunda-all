@@ -152,6 +152,23 @@ describe('Inbound payload parsers', () => {
     expect(parsed.receiptId).toBe('RECEIPT-20260507-002')
   })
 
+  test('parseOutboundCtnToDepot accepts C3 handoverTime alias', () => {
+    const parsed = parseOutboundCtnToDepot({
+      orderId: 'ORDER-20260507-030',
+      timestamp: '2026-05-07T11:00:00Z',
+      senderId: PARTY.transport.id,
+      ctnNumber: 'MSKU1234567',
+      vesselId: 'VESSEL-042',
+      handoverTime: '2026-05-07T11:10:00Z',
+      receiptId: 'RECEIPT-20260507-002',
+      driverName: 'Zhang San',
+      carLicense: 'HU-A-12345'
+    })
+
+    expect(parsed.handOverTime).toBe('2026-05-07T11:10:00Z')
+    expect(parsed.handoverTime).toBe('2026-05-07T11:10:00Z')
+  })
+
   test('parsers throw on missing required fields', () => {
     expect(() => parseAskForCtn({})).toThrow('Missing required string variable: orderId')
     expect(() => parseOutboundCtnToDepot({ orderId: 'ORDER-20260507-003' }))

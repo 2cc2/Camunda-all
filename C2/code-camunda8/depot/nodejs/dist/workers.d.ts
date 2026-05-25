@@ -8,6 +8,7 @@
  */
 import { CamundaRestClient, Dto } from '@camunda8/sdk';
 import { DepotProcessVariables } from './types';
+import { DepotMessagePublisher } from './rabbitmq/publisher';
 declare class DepotVariables extends Dto.LosslessDto implements DepotProcessVariables {
     orderId?: string;
     timestamp?: string;
@@ -26,7 +27,7 @@ declare class DepotVariables extends Dto.LosslessDto implements DepotProcessVari
     ctnArrivalInfoSentToSa?: boolean;
     outboundCtnSentToCt?: boolean;
 }
-export declare function startDepotContractWorkers(client: CamundaRestClient): {
+export declare function startDepotContractWorkers(client: CamundaRestClient, publisher?: DepotMessagePublisher): {
     sendEmptyCtnToTransportWorker: import("@camunda8/sdk").CamundaJobWorker<DepotVariables, DepotVariables>;
     sendCtnArrivalInfoToSaWorker: import("@camunda8/sdk").CamundaJobWorker<DepotVariables, DepotVariables>;
     sendOutboundCtnToCtWorker: import("@camunda8/sdk").CamundaJobWorker<DepotVariables, DepotVariables>;

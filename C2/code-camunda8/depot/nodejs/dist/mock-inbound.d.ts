@@ -19,6 +19,7 @@ export declare function buildOutboundCtnToDepotMockVariables(orderId: string): {
     ctnNumber: string;
     vesselId: string;
     handOverTime: string;
+    handoverTime: string;
     receiptId: string;
     driverName: string;
     carLicense: string;
@@ -27,7 +28,7 @@ export declare function parseArgs(argv?: string[]): {
     orderId: string;
 };
 type PublishMessageClient = {
-    publishMessage: (payload: any) => Promise<unknown>;
+    publishMessage: (name: string, correlationKey: string, variables: Record<string, any>) => Promise<unknown>;
 };
 export declare function publishStartMessage(client: PublishMessageClient, orderId: string): Promise<void>;
 export declare function publishFollowupInboundMessages(client: PublishMessageClient, orderId: string, sleep?: (ms: number) => Promise<unknown>): Promise<void>;
