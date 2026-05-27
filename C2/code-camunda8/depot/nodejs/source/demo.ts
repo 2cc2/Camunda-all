@@ -6,7 +6,7 @@
  *
  * What it does:
  * 1. Deploys depot.bpmn to Camunda 8
- * 2. Starts a process instance with the given orderId
+ * 2. Publishes the start message to RabbitMQ with the given orderId
  * 3. Optionally mocks inbound messages (ask-for-ctn, outbound-ctn-to-depot)
  * 4. Workers drive the process to completion
  */
@@ -79,12 +79,6 @@ async function deployDepotModel(client: any): Promise<void> {
   )
 }
 
-async function startDepotProcessByMessage(client: any, orderId: string): Promise<void> {
-  void client
-  void orderId
-  console.log(`Depot process will be started through RabbitMQ and forwarded into ${PROCESS_IDS.depot}.`)
-}
-
 export async function runDemo(): Promise<void> {
   const { orderId, mockInbound } = parseArgs()
 
@@ -111,7 +105,7 @@ export async function runDemo(): Promise<void> {
   await deployDepotModel(grpcClient)
 
   if (mockInbound) {
-    await startDepotProcessByMessage(bridge.publisher, orderId)
+    console.log(`Depot process will be started through RabbitMQ and forwarded into ${PROCESS_IDS.depot}.`)
     await publishStartMessage(bridge.publisher, orderId)
     await publishFollowupInboundMessages(
       bridge.publisher,

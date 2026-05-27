@@ -43,14 +43,14 @@ describe('Depot mock inbound helpers', () => {
   })
 
   test('publishStartMessage emits the start message only', async () => {
-    const client = {
-      publishMessage: jest.fn(async () => ({ ok: true }))
+    const publisher = {
+      publishMessage: jest.fn(async () => undefined)
     }
 
-    await publishStartMessage(client, 'ORDER-20260507-104')
+    await publishStartMessage(publisher, 'ORDER-20260507-104')
 
-    expect(client.publishMessage).toHaveBeenCalledTimes(1)
-    expect(client.publishMessage).toHaveBeenCalledWith(
+    expect(publisher.publishMessage).toHaveBeenCalledTimes(1)
+    expect(publisher.publishMessage).toHaveBeenCalledWith(
       MESSAGE_NAMES.askForCtn,
       'ORDER-20260507-104',
       expect.objectContaining({
@@ -61,15 +61,15 @@ describe('Depot mock inbound helpers', () => {
   })
 
   test('publishFollowupInboundMessages emits the follow-up inbound message', async () => {
-    const client = {
-      publishMessage: jest.fn(async () => ({ ok: true }))
+    const publisher = {
+      publishMessage: jest.fn(async () => undefined)
     }
     const sleep = jest.fn(async () => undefined)
 
-    await publishFollowupInboundMessages(client, 'ORDER-20260507-105', sleep)
+    await publishFollowupInboundMessages(publisher, 'ORDER-20260507-105', sleep)
 
-    expect(client.publishMessage).toHaveBeenCalledTimes(1)
-    expect(client.publishMessage).toHaveBeenCalledWith(
+    expect(publisher.publishMessage).toHaveBeenCalledTimes(1)
+    expect(publisher.publishMessage).toHaveBeenCalledWith(
       MESSAGE_NAMES.outboundCtnToDepot,
       'ORDER-20260507-105',
       expect.objectContaining({
@@ -82,15 +82,15 @@ describe('Depot mock inbound helpers', () => {
   })
 
   test('publishMockInboundMessages emits start and follow-up inbound messages in order', async () => {
-    const client = {
-      publishMessage: jest.fn(async () => ({ ok: true }))
+    const publisher = {
+      publishMessage: jest.fn(async () => undefined)
     }
     const sleep = jest.fn(async () => undefined)
 
-    await publishMockInboundMessages(client, 'ORDER-20260507-106', sleep)
+    await publishMockInboundMessages(publisher, 'ORDER-20260507-106', sleep)
 
-    expect(client.publishMessage).toHaveBeenCalledTimes(2)
-    expect(client.publishMessage).toHaveBeenNthCalledWith(
+    expect(publisher.publishMessage).toHaveBeenCalledTimes(2)
+    expect(publisher.publishMessage).toHaveBeenNthCalledWith(
       1,
       MESSAGE_NAMES.askForCtn,
       'ORDER-20260507-106',
@@ -99,7 +99,7 @@ describe('Depot mock inbound helpers', () => {
         containerId: 'MSKU1234567'
       })
     )
-    expect(client.publishMessage).toHaveBeenNthCalledWith(
+    expect(publisher.publishMessage).toHaveBeenNthCalledWith(
       2,
       MESSAGE_NAMES.outboundCtnToDepot,
       'ORDER-20260507-106',

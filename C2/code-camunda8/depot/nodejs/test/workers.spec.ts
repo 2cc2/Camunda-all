@@ -27,8 +27,7 @@ describe('startDepotContractWorkers', () => {
       createJobWorker: jest.fn((config: WorkerRegistration) => {
         registrations.push(config)
         return { stop: jest.fn() }
-      }),
-      publishMessage: jest.fn()
+      })
     }
 
     startDepotContractWorkers(client as any, createPublisher() as any)

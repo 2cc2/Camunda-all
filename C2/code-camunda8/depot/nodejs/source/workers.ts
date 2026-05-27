@@ -42,26 +42,9 @@ function optionalString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() !== '' ? value : undefined
 }
 
-class DirectCamundaMessagePublisher implements DepotMessagePublisher {
-  constructor(private readonly client: CamundaRestClient) {}
-
-  async publishMessage(
-    name: string,
-    correlationKey: string,
-    variables: Record<string, any>
-  ): Promise<void> {
-    await this.client.publishMessage({
-      name,
-      correlationKey,
-      timeToLive: 600,
-      variables
-    })
-  }
-}
-
 export function startDepotContractWorkers(
   client: CamundaRestClient,
-  publisher: DepotMessagePublisher = new DirectCamundaMessagePublisher(client)
+  publisher: DepotMessagePublisher
 ) {
   const sendEmptyCtnToTransportWorker = client.createJobWorker<DepotVariables, DepotVariables>({
     type: JOB_TYPES.sendEmptyCtnToTransport,

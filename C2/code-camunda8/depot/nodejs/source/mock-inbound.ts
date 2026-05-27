@@ -2,16 +2,11 @@
  * Standalone mock inbound message publisher for Depot.
  *
  * Usage (while workers are running in another terminal):
- *   CAMUNDA_REST_ADDRESS=http://localhost:8080 npx ts-node source/mock-inbound.ts --orderId=ORDER-20260507-001
+ *   npx ts-node source/mock-inbound.ts --orderId=ORDER-20260507-001
  */
 
-import {
-  CAMUNDA_AUTH_STRATEGY,
-  CAMUNDA_GRPC_ADDRESS,
-  MESSAGE_NAMES,
-  PARTY
-} from './config'
-import { RabbitMQPublisher } from './rabbitmq/publisher'
+import { MESSAGE_NAMES, PARTY } from './config'
+import { DepotMessagePublisher, RabbitMQPublisher } from './rabbitmq/publisher'
 
 export function nowIso(): string {
   return new Date().toISOString()
@@ -56,26 +51,22 @@ export function parseArgs(argv: string[] = (globalThis as any).process?.argv ?? 
   return { orderId }
 }
 
-type PublishMessageClient = {
-  publishMessage: (name: string, correlationKey: string, variables: Record<string, any>) => Promise<unknown>
-}
-
 export async function publishStartMessage(
-  client: PublishMessageClient,
+  publisher: DepotMessagePublisher,
   orderId: string
 ): Promise<void> {
-  await client.publishMessage(MESSAGE_NAMES.askForCtn, orderId, buildAskForCtnMockVariables(orderId))
+  await publisher.publishMessage(MESSAGE_NAMES.askForCtn, orderId, buildAskForCtnMockVariables(orderId))
   console.log(`[mock] published ${MESSAGE_NAMES.askForCtn}`)
 }
 
 export async function publishFollowupInboundMessages(
-  client: PublishMessageClient,
+  publisher: DepotMessagePublisher,
   orderId: string,
   sleep: (ms: number) => Promise<unknown> = (ms) => new Promise((r) => setTimeout(r, ms))
 ): Promise<void> {
   await sleep(1500)
 
-  await client.publishMessage(
+  await publisher.publishMessage(
     MESSAGE_NAMES.outboundCtnToDepot,
     orderId,
     buildOutboundCtnToDepotMockVariables(orderId)
@@ -84,25 +75,23 @@ export async function publishFollowupInboundMessages(
 }
 
 export async function publishMockInboundMessages(
-  client: PublishMessageClient,
+  publisher: DepotMessagePublisher,
   orderId: string,
   sleep: (ms: number) => Promise<unknown> = (ms) => new Promise((r) => setTimeout(r, ms))
 ): Promise<void> {
-  await publishStartMessage(client, orderId)
-  await publishFollowupInboundMessages(client, orderId, sleep)
+  await publishStartMessage(publisher, orderId)
+  await publishFollowupInboundMessages(publisher, orderId, sleep)
 }
 
 export async function main(): Promise<void> {
   const { orderId } = parseArgs()
-  void CAMUNDA_AUTH_STRATEGY
-  void CAMUNDA_GRPC_ADDRESS
-  const client = new RabbitMQPublisher()
-  await client.connect()
+  const publisher = new RabbitMQPublisher()
+  await publisher.connect()
 
   console.log(`Publishing inbound Depot messages for orderId=${orderId}`)
 
-  await publishMockInboundMessages(client, orderId)
-  await client.close()
+  await publishMockInboundMessages(publisher, orderId)
+  await publisher.close()
   console.log('Done. Check Operate or worker logs for progress.')
 }
 
