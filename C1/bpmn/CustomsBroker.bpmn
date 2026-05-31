@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_cb" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Custom" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="Process_CB" name="Customs Broker" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_CB">
+      <bpmn:outgoing>Flow_CB_start_to_submit</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Activity_submit_declaration" name="Submit Declaration to Customs">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="submit-declaration" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CB_start_to_submit</bpmn:incoming>
+      <bpmn:outgoing>Flow_CB_submit_to_wait_success</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:intermediateCatchEvent id="Event_declare_success" name="Declare Success received">
+      <bpmn:incoming>Flow_CB_submit_to_wait_success</bpmn:incoming>
+      <bpmn:outgoing>Flow_CB_success_to_appoint</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_declare_success" messageRef="Message_declare_success_received" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="Activity_appoint_inspection" name="Appoint for Inspection">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="appoint-inspection" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CB_success_to_appoint</bpmn:incoming>
+      <bpmn:outgoing>Flow_CB_appoint_to_wait_clearance</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:intermediateCatchEvent id="Event_customs_clearance" name="Customs Clearance received">
+      <bpmn:incoming>Flow_CB_appoint_to_wait_clearance</bpmn:incoming>
+      <bpmn:outgoing>Flow_CB_clearance_to_end</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_cb_clearance" messageRef="Message_CB_customs_cearance" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="EndEvent_CB">
+      <bpmn:incoming>Flow_CB_clearance_to_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_CB_start_to_submit" sourceRef="StartEvent_CB" targetRef="Activity_submit_declaration" />
+    <bpmn:sequenceFlow id="Flow_CB_submit_to_wait_success" sourceRef="Activity_submit_declaration" targetRef="Event_declare_success" />
+    <bpmn:sequenceFlow id="Flow_CB_success_to_appoint" sourceRef="Event_declare_success" targetRef="Activity_appoint_inspection" />
+    <bpmn:sequenceFlow id="Flow_CB_appoint_to_wait_clearance" sourceRef="Activity_appoint_inspection" targetRef="Event_customs_clearance" />
+    <bpmn:sequenceFlow id="Flow_CB_clearance_to_end" sourceRef="Event_customs_clearance" targetRef="EndEvent_CB" />
+  </bpmn:process>
+  <bpmn:message id="Message_declare_success_received" name="Message_declare_success_received">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmn:message id="Message_CB_customs_cearance" name="Message_CB_customs_cearance">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+</bpmn:definitions>

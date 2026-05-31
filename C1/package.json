@@ -1,0 +1,22 @@
+{
+  "name": "camunda-customs-only-demo",
+  "version": "1.0.0",
+  "description": "Camunda 8 multi-participant real data interaction with RabbitMQ middleware",
+  "scripts": {
+    "workers": "ts-node source/index.ts",
+    "deploy": "ts-node source/deploy.ts",
+    "run": "ts-node source/runCustoms.ts",
+    "send": "ts-node source/sendMessages.ts",
+    "environment": "ts-node source/mockEnvironment.ts"
+  },
+  "dependencies": {
+    "@camunda8/sdk": "^8.7.0",
+    "@types/amqplib": "^0.10.8",
+    "amqplib": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}
