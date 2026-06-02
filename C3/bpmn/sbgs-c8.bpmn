@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+  xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+  id="Definitions_SBGS"
+  targetNamespace="http://bpmn.io/schema/bpmn"
+  exporter="Camunda Modeler"
+  exporterVersion="5.46.1"
+  modeler:executionPlatform="Camunda Cloud"
+  modeler:executionPlatformVersion="8.8.0">
+  <bpmn:collaboration id="Collaboration_SBGS">
+    <bpmn:participant id="Participant_SBGS" name="SBGS" processRef="Process_SBGS" />
+    <bpmn:participant id="Participant_Environment" name="Environment" processRef="Process_Environment" />
+    <bpmn:messageFlow id="MessageFlow_CrewListInbound" name="crewlist-received" sourceRef="Participant_Environment" targetRef="StartEvent_CrewListReceived" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_SBGS" name="sbgs-process" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_CrewListReceived" name="Crew List received">
+      <bpmn:outgoing>Flow_SBGS_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_CrewListReceived" messageRef="Message_CrewListToSBGS" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_PersonnelInformationRegistration" name="Personnel information registration">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="personnel-information-registration" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SBGS_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_SBGS_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_SBGSDone">
+      <bpmn:incoming>Flow_SBGS_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_SBGS_1" sourceRef="StartEvent_CrewListReceived" targetRef="Task_PersonnelInformationRegistration" />
+    <bpmn:sequenceFlow id="Flow_SBGS_2" sourceRef="Task_PersonnelInformationRegistration" targetRef="EndEvent_SBGSDone" />
+  </bpmn:process>
+  <bpmn:message id="Message_CrewListToSBGS" name="crewlist-received" />
+  <bpmn:process id="Process_Environment" isExecutable="false" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_SBGS">
+    <bpmndi:BPMNPlane id="BPMNPlane_SBGS" bpmnElement="Collaboration_SBGS">
+      <bpmndi:BPMNShape id="Participant_SBGS_di" bpmnElement="Participant_SBGS" isHorizontal="true">
+        <dc:Bounds x="160" y="430" width="380" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_CrewListReceived_di" bpmnElement="StartEvent_CrewListReceived">
+        <dc:Bounds x="222" y="462" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_PersonnelInformationRegistration_di" bpmnElement="Task_PersonnelInformationRegistration">
+        <dc:Bounds x="310" y="440" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_SBGSDone_di" bpmnElement="EndEvent_SBGSDone">
+        <dc:Bounds x="452" y="462" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_SBGS_1_di" bpmnElement="Flow_SBGS_1">
+        <di:waypoint x="258" y="480" />
+        <di:waypoint x="310" y="480" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SBGS_2_di" bpmnElement="Flow_SBGS_2">
+        <di:waypoint x="410" y="480" />
+        <di:waypoint x="452" y="480" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_Environment_di" bpmnElement="Participant_Environment" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="550" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="MessageFlow_CrewListInbound_di" bpmnElement="MessageFlow_CrewListInbound">
+        <di:waypoint x="240" y="280" />
+        <di:waypoint x="240" y="462" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

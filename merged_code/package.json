@@ -1,0 +1,30 @@
+{
+  "name": "container-export-collaboration",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-organization container export collaboration on Camunda 8 / Zeebe — integrated from C1-C5 submissions.",
+  "scripts": {
+    "deploy": "ts-node scripts/deploy.ts",
+    "start:processes": "ts-node scripts/start-processes.ts",
+    "start:all": "ts-node scripts/start-all.ts",
+    "start:owner": "ts-node workers/owner/index.ts",
+    "start:ffw": "ts-node workers/freight-forwarder/index.ts",
+    "start:sag": "ts-node workers/shipping-agency/index.ts",
+    "start:cub": "ts-node workers/customs-broker/index.ts",
+    "start:cus": "ts-node workers/customs/index.ts",
+    "start:sbg": "ts-node workers/sbgs/index.ts",
+    "start:cte": "ts-node workers/container-terminal/index.ts",
+    "start:trp": "ts-node workers/transport/index.ts",
+    "start:dpt": "ts-node workers/depot/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@camunda8/sdk": "^8.8.5",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
