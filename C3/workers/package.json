@@ -1,0 +1,16 @@
+{
+  "name": "camunda-third-row-workers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Camunda 8 workers and demo scripts for the Shipping Agency + SBGS scope",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node src/deploy.js",
+    "demo": "node src/demo.js"
+  },
+  "dependencies": {
+    "@camunda8/sdk": "^8.8.5",
+    "amqplib": "^0.10.5"
+  }
+}
