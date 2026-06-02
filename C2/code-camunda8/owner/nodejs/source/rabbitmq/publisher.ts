@@ -80,6 +80,41 @@ export class RabbitMQPublisher {
         return result
     }
 
+    async publishCamundaMessage(params: {
+        camundaMessageName: string
+        routingKey: string
+        correlationKey: string
+        variables: Record<string, unknown>
+        source?: string
+    }): Promise<boolean> {
+        if (!this.channel || !this.ready) {
+            throw new Error('[RabbitMQ Publisher] Not connected, call connect() first')
+        }
+
+        const message = createMessage({
+            camundaMessageName: params.camundaMessageName,
+            correlationKey: params.correlationKey,
+            variables: params.variables,
+            source: params.source || 'c2-owner-mock',
+        })
+
+        const buffer = Buffer.from(JSON.stringify(message))
+
+        const result = this.channel.publish(EXCHANGE.NAME, params.routingKey, buffer, {
+            persistent: true,
+            contentType: 'application/json',
+            contentEncoding: 'utf-8',
+        })
+
+        if (result) {
+            console.log(`[RabbitMQ] Published [${params.routingKey}] -> ${params.camundaMessageName} (key=${params.correlationKey})`)
+        } else {
+            console.warn(`[RabbitMQ] Publish buffer full [${params.routingKey}]`)
+        }
+
+        return result
+    }
+
     async close(): Promise<void> {
         try {
             if (this.channel) await this.channel.close()

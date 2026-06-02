@@ -30,6 +30,8 @@ export const EXCHANGE = {
 export const QUEUES = {
     /** C2 Owner 接收队列 */
     OWNER: 'camunda.owner',
+    /** C2 Owner 入站消息观察队列，不消费，用于 RabbitMQ UI 查看消息体 */
+    OWNER_DEBUG: 'camunda.owner.debug',
     /** 全量日志队列 */
     ALL: 'camunda.all',
 } as const

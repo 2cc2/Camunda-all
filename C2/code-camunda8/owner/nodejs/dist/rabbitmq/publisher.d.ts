@@ -17,6 +17,13 @@ export declare class RabbitMQPublisher {
      * @param variables 流程变量
      */
     publish(internalMessageName: string, correlationKey: string, variables: Record<string, unknown>): Promise<boolean>;
+    publishCamundaMessage(params: {
+        camundaMessageName: string;
+        routingKey: string;
+        correlationKey: string;
+        variables: Record<string, unknown>;
+        source?: string;
+    }): Promise<boolean>;
     close(): Promise<void>;
     isReady(): boolean;
 }

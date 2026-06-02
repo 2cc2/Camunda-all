@@ -32,6 +32,17 @@ type Args = {
   useRabbitmq: boolean
 }
 
+const INBOUND_RABBITMQ_MESSAGES = {
+  ctnToOwner: {
+    camundaMessageName: 'Message_Transport_empty_CTN_received',
+    routingKey: 'owner.ctn-to-owner'
+  },
+  expenseNoteToOwner: {
+    camundaMessageName: 'Message_expense_note_received',
+    routingKey: 'owner.expense-note-to-owner'
+  }
+} as const
+
 function nowIso(): string {
   return new Date().toISOString()
 }
@@ -104,45 +115,73 @@ async function deployOwnerModel(client: any): Promise<void> {
  *   - Event_1ekkpx7: CTN received   (from Transport)
  *   - Event_00o2m98: expense note received
  */
-async function mockInboundMessages(client: any, orderId: string): Promise<void> {
+async function mockInboundMessages(
+  client: any,
+  orderId: string,
+  rabbitPublisher?: RabbitMQPublisher
+): Promise<void> {
   // Wait for the engine to advance to the first message catch event.
   await new Promise((r) => setTimeout(r, 3000))
 
+  const ctnVariables = {
+    orderId,
+    timestamp: nowIso(),
+    senderId: PARTY.transport.id,
+    ctnNumber: 'CTN-884821',
+    handOverTime: nowIso(),
+    driverName: 'Driver Zhang',
+    carLicense: 'SHA-12345'
+  }
+
   // 1) Transport -> Owner: ctn-to-owner (M22)
-  await client.publishMessage({
-    name: MESSAGE_NAMES.ctnToOwner,
-    correlationKey: orderId,
-    timeToLive: 600,
-    variables: {
-      orderId,
-      timestamp: nowIso(),
-      senderId: PARTY.transport.id,
-      ctnNumber: 'CTN-884821',
-      handOverTime: nowIso(),
-      driverName: '张三',
-      carLicense: '沪A-12345'
-    }
-  })
-  console.log(`[mock] sent ${MESSAGE_NAMES.ctnToOwner} orderId=${orderId}`)
+  if (rabbitPublisher?.isReady()) {
+    await rabbitPublisher.publishCamundaMessage({
+      ...INBOUND_RABBITMQ_MESSAGES.ctnToOwner,
+      correlationKey: orderId,
+      variables: ctnVariables,
+      source: 'mock-transport'
+    })
+    console.log(`[mock] sent ${MESSAGE_NAMES.ctnToOwner} via RabbitMQ orderId=${orderId}`)
+  } else {
+    await client.publishMessage({
+      name: MESSAGE_NAMES.ctnToOwner,
+      correlationKey: orderId,
+      timeToLive: 600,
+      variables: ctnVariables
+    })
+    console.log(`[mock] sent ${MESSAGE_NAMES.ctnToOwner} via REST orderId=${orderId}`)
+  }
 
   // Wait for send-outbound-ctn-to-transport worker to finish and engine to reach second catch event.
   await new Promise((r) => setTimeout(r, 5000))
 
+  const expenseVariables = {
+    orderId,
+    timestamp: nowIso(),
+    senderId: PARTY.freightForwarder.id,
+    expenseId: 'EXP-20260427-001',
+    expenseAmount: 1234.56,
+    currency: 'CNY'
+  }
+
   // 2) Freight Forwarder -> Owner: expense-note-to-owner
-  await client.publishMessage({
-    name: MESSAGE_NAMES.expenseNoteToOwner,
-    correlationKey: orderId,
-    timeToLive: 600,
-    variables: {
-      orderId,
-      timestamp: nowIso(),
-      senderId: PARTY.freightForwarder.id,
-      expenseId: 'EXP-20260427-001',
-      expenseAmount: 1234.56,
-      currency: 'CNY'
-    }
-  })
-  console.log(`[mock] sent ${MESSAGE_NAMES.expenseNoteToOwner} orderId=${orderId}`)
+  if (rabbitPublisher?.isReady()) {
+    await rabbitPublisher.publishCamundaMessage({
+      ...INBOUND_RABBITMQ_MESSAGES.expenseNoteToOwner,
+      correlationKey: orderId,
+      variables: expenseVariables,
+      source: 'mock-freight-forwarder'
+    })
+    console.log(`[mock] sent ${MESSAGE_NAMES.expenseNoteToOwner} via RabbitMQ orderId=${orderId}`)
+  } else {
+    await client.publishMessage({
+      name: MESSAGE_NAMES.expenseNoteToOwner,
+      correlationKey: orderId,
+      timeToLive: 600,
+      variables: expenseVariables
+    })
+    console.log(`[mock] sent ${MESSAGE_NAMES.expenseNoteToOwner} via REST orderId=${orderId}`)
+  }
 }
 
 async function main(): Promise<void> {
@@ -188,7 +227,7 @@ async function main(): Promise<void> {
   )
 
   if (mockInbound) {
-    await mockInboundMessages(client, orderId)
+    await mockInboundMessages(client, orderId, rabbitPublisher)
 
     // Give the engine time to advance and complete the payment task.
     await new Promise((r) => setTimeout(r, 5000))

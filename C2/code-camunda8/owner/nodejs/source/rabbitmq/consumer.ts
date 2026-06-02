@@ -33,9 +33,12 @@ export class RabbitMQConsumer {
             await this.channel.assertExchange(EXCHANGE.NAME, EXCHANGE.TYPE, { durable: true })
             await this.channel.assertQueue(QUEUES.OWNER, { durable: true })
             await this.channel.bindQueue(QUEUES.OWNER, EXCHANGE.NAME, 'owner.#')
+            await this.channel.assertQueue(QUEUES.OWNER_DEBUG, { durable: true })
+            await this.channel.bindQueue(QUEUES.OWNER_DEBUG, EXCHANGE.NAME, 'owner.#')
 
             this.ready = true
             console.log('[RabbitMQ Consumer] Connected, queue:', QUEUES.OWNER)
+            console.log('[RabbitMQ Consumer] Debug queue bound:', QUEUES.OWNER_DEBUG)
         } catch (error) {
             console.error('[RabbitMQ Consumer] Connection failed:', error)
             throw error

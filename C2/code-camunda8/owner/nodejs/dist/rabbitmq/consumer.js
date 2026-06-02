@@ -60,8 +60,11 @@ class RabbitMQConsumer {
             await this.channel.assertExchange(config_1.EXCHANGE.NAME, config_1.EXCHANGE.TYPE, { durable: true });
             await this.channel.assertQueue(config_1.QUEUES.OWNER, { durable: true });
             await this.channel.bindQueue(config_1.QUEUES.OWNER, config_1.EXCHANGE.NAME, 'owner.#');
+            await this.channel.assertQueue(config_1.QUEUES.OWNER_DEBUG, { durable: true });
+            await this.channel.bindQueue(config_1.QUEUES.OWNER_DEBUG, config_1.EXCHANGE.NAME, 'owner.#');
             this.ready = true;
             console.log('[RabbitMQ Consumer] Connected, queue:', config_1.QUEUES.OWNER);
+            console.log('[RabbitMQ Consumer] Debug queue bound:', config_1.QUEUES.OWNER_DEBUG);
         }
         catch (error) {
             console.error('[RabbitMQ Consumer] Connection failed:', error);
