@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_ct" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Custom" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="Process_CT" name="Container Terminal" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_CT">
+      <bpmn:outgoing>Flow_CT_start_to_arrival</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Activity_send_arrival" name="Send Arrival to Customs">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-arrival-to-customs" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CT_start_to_arrival</bpmn:incoming>
+      <bpmn:outgoing>Flow_CT_arrival_to_wait_clearance</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:intermediateCatchEvent id="Event_ct_clearance" name="Customs Clearance received">
+      <bpmn:incoming>Flow_CT_arrival_to_wait_clearance</bpmn:incoming>
+      <bpmn:outgoing>Flow_CT_clearance_to_end</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ct_clearance" messageRef="Message_CT_customs_cearance" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="EndEvent_CT">
+      <bpmn:incoming>Flow_CT_clearance_to_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_CT_start_to_arrival" sourceRef="StartEvent_CT" targetRef="Activity_send_arrival" />
+    <bpmn:sequenceFlow id="Flow_CT_arrival_to_wait_clearance" sourceRef="Activity_send_arrival" targetRef="Event_ct_clearance" />
+    <bpmn:sequenceFlow id="Flow_CT_clearance_to_end" sourceRef="Event_ct_clearance" targetRef="EndEvent_CT" />
+  </bpmn:process>
+  <bpmn:message id="Message_CT_customs_cearance" name="Message_CT_customs_cearance">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=orderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ContainerTerminal">
+    <bpmndi:BPMNPlane id="BPMNPlane_ContainerTerminal" bpmnElement="Process_CT">
+      <bpmndi:BPMNShape id="StartEvent_CT_di" bpmnElement="StartEvent_CT">
+        <dc:Bounds x="120" y="160" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_send_arrival_di" bpmnElement="Activity_send_arrival">
+        <dc:Bounds x="220" y="138" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_ct_clearance_di" bpmnElement="Event_ct_clearance">
+        <dc:Bounds x="454" y="160" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="414" y="204" width="117" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_CT_di" bpmnElement="EndEvent_CT">
+        <dc:Bounds x="564" y="160" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Flow_CT_start_to_arrival_di" bpmnElement="Flow_CT_start_to_arrival">
+        <di:waypoint x="156" y="178" />
+        <di:waypoint x="220" y="178" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CT_arrival_to_wait_clearance_di" bpmnElement="Flow_CT_arrival_to_wait_clearance">
+        <di:waypoint x="380" y="178" />
+        <di:waypoint x="454" y="178" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CT_clearance_to_end_di" bpmnElement="Flow_CT_clearance_to_end">
+        <di:waypoint x="490" y="178" />
+        <di:waypoint x="564" y="178" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
